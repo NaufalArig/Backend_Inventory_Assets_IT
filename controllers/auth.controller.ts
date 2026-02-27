@@ -11,6 +11,7 @@ interface User extends RowDataPacket {
   password: string;
   name: string;
   role: string;
+  phone: string;
   status: string;
   email_verified: boolean;
 }
