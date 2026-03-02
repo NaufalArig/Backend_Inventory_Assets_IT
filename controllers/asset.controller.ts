@@ -439,7 +439,7 @@ export const importAssets = async (req: Request, res: Response) => {
     const errors: string[] = [];
     const assetsData: any[] = [];
 
-    const fileBuffer = Buffer.from(req.file.buffer);
+    const fileBuffer: Buffer = Buffer.from(req.file.buffer);
     const fileName = req.file.originalname.toLowerCase();
 
     // PROCESS EXCEL FILE
@@ -451,7 +451,7 @@ export const importAssets = async (req: Request, res: Response) => {
           console.log('Processing Excel file with ExcelJS');
 
           const workbook = new ExcelJS.Workbook();
-          await workbook.xlsx.load(fileBuffer);
+          await workbook.xlsx.load(fileBuffer.buffer as ArrayBuffer);
 
           const worksheet = workbook.getWorksheet(1);
 
@@ -557,7 +557,7 @@ export const importAssets = async (req: Request, res: Response) => {
       console.log('Processing CSV file');
 
       try {
-        const fileContent = fileBuffer.toString('utf-8');
+        const fileContent = fileBuffer.toString("utf-8");
 
         let cleanContent = fileContent
           .replace(/^\uFEFF/, '')
@@ -1074,8 +1074,6 @@ export const exportAssets = async (req: Request, res: Response) => {
   }
 };
 
-
-
 // ===== TEMPLATE DOWNLOAD FUNCTIONS =====
 export const downloadTemplate = async (req: Request, res: Response) => {
   try {
@@ -1092,6 +1090,74 @@ Desktop HP Elite,ASSET-002,SN987654321,desktop,EliteDesk 800,Workstation,HR-DEPT
     res.status(500).json({
       success: false,
       message: 'Failed to download template'
+    });
+  }
+};
+
+export const downloadExcelTemplate = async (req: Request, res: Response) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Template');
+
+    worksheet.columns = [
+      { header: 'Asset Name', key: 'name', width: 25 },
+      { header: 'Asset Number', key: 'asset_number', width: 20 },
+      { header: 'Serial Number', key: 'serial_number', width: 25 },
+      { header: 'Category', key: 'category', width: 15 },
+      { header: 'Model', key: 'model', width: 20 },
+      { header: 'Type', key: 'type', width: 20 },
+      { header: 'Computer Name', key: 'computer_name', width: 20 },
+      { header: 'Owner Name', key: 'owner_name', width: 20 },
+      { header: 'Owner Department', key: 'owner_department', width: 22 },
+      { header: 'Location', key: 'location', width: 22 },
+      { header: 'Purchase Date', key: 'purchase_date', width: 15 },
+      { header: 'Purchase Value', key: 'purchase_value', width: 18 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Distribution Status', key: 'distribution_status', width: 20 },
+      { header: 'Notes', key: 'notes', width: 30 }
+    ];
+
+    worksheet.addRow({
+      name: 'Laptop Dell XPS 15',
+      asset_number: 'ASSET-001',
+      serial_number: 'SN123456789',
+      category: 'laptop',
+      model: 'XPS 15 9520',
+      type: 'Business Laptop',
+      computer_name: 'IT-DEPT-001',
+      owner_name: 'John Doe',
+      owner_department: 'IT Department',
+      location: 'Gedung A Lantai 3',
+      purchase_date: '2024-01-15',
+      purchase_value: 15000000,
+      status: 'use',
+      distribution_status: 'available',
+      notes: 'High-performance laptop'
+    });
+
+    worksheet.getRow(1).eachCell(cell => {
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=asset_import_template.xlsx'
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Download Excel template error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to download Excel template'
     });
   }
 };
